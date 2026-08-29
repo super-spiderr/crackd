@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CrackdApp",
-    "slug": "CrackdApp",
+    "name": "Crackd",
+    "slug": "crackd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
