@@ -122,6 +122,68 @@ export function FeedbackPin({
   );
 }
 
+/**
+ * The feedback pins for one guess, bunched into a compact 2-column peg
+ * cluster (classic Mastermind pegboard) instead of a single row.
+ *
+ * This matters: pins are deliberately sorted (all exact, then all misplaced,
+ * then dead — see engine invariants) so their order never reveals *which*
+ * guessed digit they belong to. Laid out as one row directly across from the
+ * digit cells, that sorted order reads as if pin N corresponds to digit N —
+ * a player naturally assumes "the green one is under my first digit." A
+ * 2-column cluster breaks that visual line-up on sight.
+ */
+export function PinCluster({
+  pins,
+  animate,
+  pinSize = 17,
+}: {
+  pins: ('exact' | 'misplaced' | 'dead')[];
+  animate?: boolean;
+  pinSize?: number;
+}) {
+  const gap = Math.max(3, pinSize * 0.24);
+  return (
+    <View style={{ width: pinSize * 2 + gap, flexDirection: 'row', flexWrap: 'wrap', gap, justifyContent: 'flex-end' }}>
+      {pins.map((p, i) => (
+        <FeedbackPin key={i} state={p} animate={animate} delay={i * 100} size={pinSize} />
+      ))}
+    </View>
+  );
+}
+
+/** Spells out what the three pin states mean, and that their order is shuffled — not lined up with the guessed digits. */
+export function PinLegend() {
+  return (
+    <View style={{ gap: 4, paddingBottom: 4 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
+        <LegendItem state="exact" label="right spot" />
+        <LegendItem state="misplaced" label="wrong spot" />
+        <LegendItem state="dead" label="not in code" />
+      </View>
+      <Text
+        style={{
+          textAlign: 'center',
+          fontFamily: tokens.type.uiMedium,
+          fontSize: 10.5,
+          color: 'rgba(242,228,201,0.4)',
+        }}
+      >
+        Shuffled each guess — not matched to a digit.
+      </Text>
+    </View>
+  );
+}
+
+function LegendItem({ state, label }: { state: 'exact' | 'misplaced' | 'dead'; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <FeedbackPin state={state} size={12} />
+      <Text style={{ fontFamily: tokens.type.uiMedium, fontSize: 11, color: 'rgba(242,228,201,0.55)' }}>{label}</Text>
+    </View>
+  );
+}
+
 /** One row of the attempt history: the digits that were guessed + their feedback pins. */
 export function GuessRow({
   n,
@@ -155,9 +217,7 @@ export function GuessRow({
         </View>
       ))}
       <View style={{ flex: 1 }} />
-      {pins.map((p, i) => (
-        <FeedbackPin key={i} state={p} animate={animatePins} delay={i * 100} size={pinSize} />
-      ))}
+      <PinCluster pins={pins} animate={animatePins} pinSize={pinSize} />
     </View>
   );
 }

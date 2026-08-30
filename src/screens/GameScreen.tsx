@@ -5,7 +5,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { IconButton } from '../components/IconButton';
 import { DigitSlot } from '../components/DigitSlot';
-import { AttemptPip, GuessRow } from '../components/GameBits';
+import { AttemptPip, GuessRow, PinLegend } from '../components/GameBits';
 import { Keypad } from '../components/Keypad';
 import { BackChevronIcon } from '../icons';
 import { tokens } from '../theme/tokens';
@@ -112,6 +112,8 @@ export function GameScreen({ navigation, route }: Props) {
           ))}
         </View>
       </View>
+
+      <PinLegend />
 
       <ScrollView
         style={{ flex: 1, marginVertical: 12 }}

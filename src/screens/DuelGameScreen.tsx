@@ -6,7 +6,7 @@ import { Screen } from '../components/Screen';
 import { PassDeviceCard } from '../components/PassDeviceCard';
 import { ShadowButton } from '../components/ShadowButton';
 import { DigitSlot } from '../components/DigitSlot';
-import { AttemptPip, GuessRow } from '../components/GameBits';
+import { AttemptPip, GuessRow, PinLegend } from '../components/GameBits';
 import { Keypad } from '../components/Keypad';
 import { ShareIcon } from '../icons';
 import { AttemptReview } from '../components/AttemptReview';
@@ -289,6 +289,8 @@ export function DuelGameScreen({ navigation, route }: Props) {
           ))}
         </View>
       </View>
+
+      <PinLegend />
 
       <ScrollView
         style={{ flex: 1, marginVertical: 12 }}
