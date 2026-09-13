@@ -6,7 +6,6 @@ import { Screen } from '../components/Screen';
 import { ShadowButton } from '../components/ShadowButton';
 import { SwingingSafe, FallingCoin } from '../components/WinIllustration';
 import { tokens } from '../theme/tokens';
-import { MAX_ATTEMPTS } from '../game/useVaultGame';
 import { playSound } from '../audio/sounds';
 import { shareViewAsImage } from '../utils/shareImage';
 
@@ -23,7 +22,8 @@ const COINS = [
 type Props = NativeStackScreenProps<RootStackParamList, 'Win'>;
 
 export function WinScreen({ navigation, route }: Props) {
-  const { codeLength, label, attempts } = route.params;
+  const { difficulty, attempts } = route.params;
+  const { label, maxAttempts } = difficulty;
   const { width: screenW, height: screenH } = useWindowDimensions();
   const shareRef = useRef<View>(null);
   // Coin positions/timings are lifted straight from the mockup's 390×844 canvas;
@@ -37,7 +37,7 @@ export function WinScreen({ navigation, route }: Props) {
 
   const share = () => void shareViewAsImage(shareRef, `Share ${label} result`);
 
-  const playAgain = () => navigation.replace('Game', { codeLength, label });
+  const playAgain = () => navigation.replace('Game', { difficulty });
 
   return (
     <Screen colors={['#155257', color.bgDeep, color.bgMidnight]} style={{ alignItems: 'center' }}>
@@ -72,7 +72,7 @@ export function WinScreen({ navigation, route }: Props) {
         </Text>
 
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
-          {Array.from({ length: MAX_ATTEMPTS }, (_, i) => {
+          {Array.from({ length: maxAttempts }, (_, i) => {
             const isWinner = i === attempts - 1;
             const used = i < attempts - 1;
             const bg = isWinner ? color.exact : used ? '#334F50' : color.misplaced;

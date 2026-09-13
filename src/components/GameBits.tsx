@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { tokens } from '../theme/tokens';
+import type { DigitFeedback } from '../engine/score';
 
 const { color } = tokens;
 
@@ -152,8 +153,13 @@ export function PinCluster({
   );
 }
 
-/** Spells out what the three pin states mean, and that their order is shuffled — not lined up with the guessed digits. */
-export function PinLegend() {
+/**
+ * Spells out what the three pin states mean. On Easy (`positional`), the
+ * colors sit right on each guessed digit, so the caption says so instead of
+ * warning that pins are shuffled — Medium/Hard's classic pin cluster is the
+ * one where the order is deliberately scrambled.
+ */
+export function PinLegend({ positional = false }: { positional?: boolean }) {
   return (
     <View style={{ gap: 4, paddingBottom: 4 }}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
@@ -169,7 +175,7 @@ export function PinLegend() {
           color: 'rgba(242,228,201,0.4)',
         }}
       >
-        Shuffled each guess — not matched to a digit.
+        {positional ? 'Each digit is colored by its own feedback.' : 'Shuffled each guess — not matched to a digit.'}
       </Text>
     </View>
   );
@@ -220,6 +226,59 @@ export function GuessRow({
       <PinCluster pins={pins} animate={animatePins} pinSize={pinSize} />
     </View>
   );
+}
+
+/**
+ * Easy-tier variant of `GuessRow`: instead of a shuffled pin cluster that
+ * only reveals *counts*, each guessed digit cell is colored by its own
+ * feedback tag — so a filled green cell tells the player exactly which
+ * position they nailed. Same row chrome as `GuessRow` so switching
+ * difficulty doesn't reflow the screen.
+ */
+export function PositionalGuessRow({
+  n,
+  digits,
+  tags,
+  cellSize = 32,
+  gap = 8,
+}: {
+  n: number;
+  digits: number[];
+  tags: DigitFeedback[];
+  cellSize?: number;
+  gap?: number;
+}) {
+  return (
+    <View style={[styles.row, { gap }]}>
+      <Text style={styles.n}>#{n}</Text>
+      {digits.map((d, i) => {
+        const s = digitCellStyle(tags[i]);
+        return (
+          <View
+            key={i}
+            style={[
+              styles.cell,
+              {
+                width: cellSize,
+                height: cellSize * 1.19,
+                borderRadius: Math.max(6, cellSize * 0.28),
+                backgroundColor: s.bg,
+                borderColor: s.border,
+              },
+            ]}
+          >
+            <Text style={[styles.cellText, { fontSize: cellSize * 0.53, color: s.text }]}>{d}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function digitCellStyle(state: DigitFeedback): { bg: string; border: string; text: string } {
+  if (state === 'exact') return { bg: color.exact, border: color.exactEdge, text: color.ink };
+  if (state === 'misplaced') return { bg: 'transparent', border: color.misplaced, text: color.textOnDark };
+  return { bg: color.dead, border: color.deadBorder, text: 'rgba(242,228,201,0.5)' };
 }
 
 const styles = StyleSheet.create({

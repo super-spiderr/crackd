@@ -10,21 +10,15 @@ import { tokens } from '../theme/tokens';
 import { playSound } from '../audio/sounds';
 import { startBackgroundMusic } from '../audio/music';
 import { useStatsStore, winRatePercent } from '../store/statsStore';
+import { DAILY_VAULT, DIFFICULTIES, DIFFICULTY_BLURB } from '../game/difficulty';
 
 const { color } = tokens;
-
-const DIFFICULTIES: { n: 3 | 4 | 5 | 6; short: string; label: string }[] = [
-  { n: 3, short: 'BIKE', label: 'Bike Lock' },
-  { n: 4, short: 'SAFE', label: 'House Safe' },
-  { n: 5, short: 'BANK', label: 'Bank Vault' },
-  { n: 6, short: 'MASTER', label: 'Master Vault' },
-];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export function HomeScreen({ navigation }: Props) {
-  const [selected, setSelected] = useState<3 | 4 | 5 | 6>(4);
-  const difficulty = DIFFICULTIES.find((d) => d.n === selected)!;
+  const [selectedId, setSelectedId] = useState<string>('medium');
+  const difficulty = DIFFICULTIES.find((d) => d.id === selectedId)!;
   const stats = useStatsStore();
 
   // Home is the stack's root and never unmounts during normal navigation, so
@@ -66,7 +60,7 @@ export function HomeScreen({ navigation }: Props) {
           radius={20}
           edgeDepth={6}
           style={{ paddingVertical: 20, alignItems: 'center' }}
-          onPress={() => navigation.navigate('Game', { codeLength: difficulty.n, label: difficulty.label })}
+          onPress={() => navigation.navigate('Game', { difficulty })}
         >
           <Text style={{ fontFamily: tokens.type.uiExtraBold, fontSize: 22, color: '#fff', letterSpacing: 1 }}>
             NEW VAULT
@@ -79,7 +73,7 @@ export function HomeScreen({ navigation }: Props) {
           radius={20}
           edgeDepth={6}
           style={{ paddingVertical: 16, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', gap: 14 }}
-          onPress={() => navigation.navigate('Game', { codeLength: 4, label: 'Daily Vault' })}
+          onPress={() => navigation.navigate('Game', { difficulty: DAILY_VAULT })}
         >
           <DailyVaultIcon />
           <View style={{ flex: 1 }}>
@@ -157,14 +151,14 @@ export function HomeScreen({ navigation }: Props) {
         </View>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {DIFFICULTIES.map((d) => {
-            const active = d.n === selected;
+            const active = d.id === selectedId;
             return (
               <Pressable
-                key={d.n}
+                key={d.id}
                 style={{ flex: 1 }}
                 onPress={() => {
                   playSound('tap');
-                  setSelected(d.n);
+                  setSelectedId(d.id);
                 }}
               >
                 <View
@@ -174,19 +168,27 @@ export function HomeScreen({ navigation }: Props) {
                       : { backgroundColor: color.surfaceRaised, borderWidth: 3, borderColor: color.surfaceRaisedEdge, borderRadius: 14, paddingVertical: 12, alignItems: 'center' }
                   }
                 >
-                  <Text style={{ fontFamily: tokens.type.uiExtraBold, fontSize: 18, color: active ? color.ink : color.slateMuted }}>
-                    {d.n}
+                  <Text
+                    style={{
+                      fontFamily: tokens.type.uiExtraBold,
+                      fontSize: 14,
+                      letterSpacing: 1,
+                      color: active ? color.ink : color.slateMuted,
+                    }}
+                  >
+                    {d.label.toUpperCase()}
                   </Text>
                   <Text
                     style={{
                       fontFamily: active ? tokens.type.uiBold : tokens.type.uiSemiBold,
-                      fontSize: 10,
-                      letterSpacing: 1,
+                      fontSize: 9.5,
+                      letterSpacing: 0.5,
                       marginTop: 2,
-                      color: active ? color.ink : color.slateMuted,
+                      textAlign: 'center',
+                      color: active ? 'rgba(11,34,36,0.7)' : color.slateMuted,
                     }}
                   >
-                    {d.short}
+                    {DIFFICULTY_BLURB[d.id]}
                   </Text>
                 </View>
               </Pressable>

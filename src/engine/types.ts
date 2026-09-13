@@ -8,6 +8,12 @@ export type Difficulty = {
   codeLength: number;
   allowRepeats: boolean;
   maxAttempts: number;
+  /**
+   * Easy-tier rule: every correct digit in a guess shows *which* position
+   * it's in, live, instead of just contributing to an exact/misplaced count.
+   * Normal Mastermind rules (counts only) keep this false.
+   */
+  revealPositions: boolean;
 };
 
 export type Guess = {

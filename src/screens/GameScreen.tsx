@@ -5,11 +5,12 @@ import type { RootStackParamList } from '../navigation/types';
 import { Screen } from '../components/Screen';
 import { IconButton } from '../components/IconButton';
 import { DigitSlot } from '../components/DigitSlot';
-import { AttemptPip, GuessRow, PinLegend } from '../components/GameBits';
+import { AttemptPip, GuessRow, PinLegend, PositionalGuessRow } from '../components/GameBits';
 import { Keypad } from '../components/Keypad';
 import { BackChevronIcon } from '../icons';
 import { tokens } from '../theme/tokens';
-import { MAX_ATTEMPTS, useVaultGame } from '../game/useVaultGame';
+import { useVaultGame } from '../game/useVaultGame';
+import { perDigitFeedback } from '../engine/score';
 import { comboSlotSizing, guessRowSizing } from '../theme/responsiveDigits';
 import { useStatsStore } from '../store/statsStore';
 
@@ -18,10 +19,15 @@ const { color } = tokens;
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
 export function GameScreen({ navigation, route }: Props) {
-  const { codeLength, label } = route.params;
-  const { code, entry, guesses, phase, spinning, key, del, submit } = useVaultGame(codeLength);
+  const { difficulty } = route.params;
+  const { codeLength, label, allowRepeats, maxAttempts, revealPositions } = difficulty;
+  const { code, entry, guesses, phase, spinning, key, del, submit } = useVaultGame(codeLength, {
+    allowRepeats,
+    maxAttempts,
+  });
   const combo = comboSlotSizing(codeLength);
   const rowSizing = guessRowSizing(codeLength);
+  const secretStr = code.join('');
 
   // Background ambience is a global concern owned by Home (see HomeScreen +
   // src/audio/music.ts) — it's already playing by the time a game is
@@ -40,13 +46,13 @@ export function GameScreen({ navigation, route }: Props) {
         recordedRef.current = true;
         useStatsStore.getState().recordWin(guesses.length);
       }
-      navigation.replace('Win', { codeLength, label, attempts: guesses.length });
+      navigation.replace('Win', { difficulty, attempts: guesses.length });
     } else if (phase === 'lost') {
       if (!recordedRef.current) {
         recordedRef.current = true;
         useStatsStore.getState().recordLoss();
       }
-      navigation.replace('Lose', { codeLength, label, code, guesses });
+      navigation.replace('Lose', { difficulty, code, guesses });
     }
   }, [phase]);
 
@@ -68,12 +74,12 @@ export function GameScreen({ navigation, route }: Props) {
           </Text>
         </View>
         <Text style={{ fontFamily: tokens.type.uiBold, fontSize: 12, color: 'rgba(242,228,201,0.6)' }}>
-          {guesses.length} / {MAX_ATTEMPTS}
+          {guesses.length} / {maxAttempts}
         </Text>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 7, justifyContent: 'center', marginVertical: 13 }}>
-        {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
+        {Array.from({ length: maxAttempts }, (_, i) => (
           <AttemptPip key={i} used={i < guesses.length} isNext={i === guesses.length} />
         ))}
       </View>
@@ -113,7 +119,7 @@ export function GameScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <PinLegend />
+      <PinLegend positional={revealPositions} />
 
       <ScrollView
         style={{ flex: 1, marginVertical: 12 }}
@@ -133,20 +139,33 @@ export function GameScreen({ navigation, route }: Props) {
             No attempts yet. Dial a code below.
           </Text>
         )}
-        {reversedGuesses.map((g, ri) => (
-          <GuessRow
-            key={guesses.length - ri}
-            n={guesses.length - ri}
-            digits={g.digits}
-            animatePins={ri === 0}
-            cellSize={rowSizing.cell}
-            pinSize={rowSizing.pin}
-            gap={rowSizing.gap}
-            pins={Array.from({ length: codeLength }, (_, i) =>
-              i < g.exact ? 'exact' : i < g.exact + g.mis ? 'misplaced' : 'dead',
-            )}
-          />
-        ))}
+        {reversedGuesses.map((g, ri) =>
+          revealPositions ? (
+            <PositionalGuessRow
+              key={guesses.length - ri}
+              n={guesses.length - ri}
+              digits={g.digits}
+              tags={perDigitFeedback(secretStr, g.digits.join(''))}
+              cellSize={rowSizing.cell}
+              gap={rowSizing.gap}
+            />
+          ) : (
+            <GuessRow
+              key={guesses.length - ri}
+              n={guesses.length - ri}
+              digits={g.digits}
+              animatePins={ri === 0}
+              cellSize={rowSizing.cell}
+              pinSize={rowSizing.pin}
+              gap={rowSizing.gap}
+              pins={Array.from({ length: codeLength }, (_, i) => {
+                if (i < g.exact) return 'exact';
+                if (i < g.exact + g.mis) return 'misplaced';
+                return 'dead';
+              })}
+            />
+          ),
+        )}
       </ScrollView>
 
       <Keypad onKey={key} onDel={del} onSubmit={submit} canSubmit={canSubmit} />

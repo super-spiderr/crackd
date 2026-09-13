@@ -7,7 +7,6 @@ import { ShadowButton } from '../components/ShadowButton';
 import { AlarmOverlay, ShakingSafe } from '../components/LoseIllustration';
 import { AttemptReview } from '../components/AttemptReview';
 import { tokens } from '../theme/tokens';
-import { MAX_ATTEMPTS } from '../game/useVaultGame';
 import { playSound } from '../audio/sounds';
 import { codeRevealSizing } from '../theme/responsiveDigits';
 
@@ -16,14 +15,15 @@ const { color } = tokens;
 type Props = NativeStackScreenProps<RootStackParamList, 'Lose'>;
 
 export function LoseScreen({ navigation, route }: Props) {
-  const { codeLength, label, code, guesses } = route.params;
+  const { difficulty, code, guesses } = route.params;
+  const { maxAttempts } = difficulty;
   const reveal = codeRevealSizing(code.length);
 
   useEffect(() => {
     playSound('lose');
   }, []);
 
-  const retry = () => navigation.replace('Game', { codeLength, label });
+  const retry = () => navigation.replace('Game', { difficulty });
   const home = () => navigation.popToTop();
 
   return (
@@ -51,7 +51,7 @@ export function LoseScreen({ navigation, route }: Props) {
           textAlign: 'center',
         }}
       >
-        {MAX_ATTEMPTS} of {MAX_ATTEMPTS} attempts used — the vault sealed itself.
+        {maxAttempts} of {maxAttempts} attempts used — the vault sealed itself.
       </Text>
 
       <View style={{ marginTop: 44 }}>

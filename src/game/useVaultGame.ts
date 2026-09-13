@@ -1,14 +1,18 @@
 import { useCallback, useState } from 'react';
 import { score } from '../engine/score';
+import { randomCode } from '../engine/codegen';
 
 export type Guess = { digits: number[]; exact: number; mis: number };
 export type Phase = 'play' | 'won' | 'lost';
 
+/** Default attempt budget — duels and any caller that doesn't pass `maxAttempts` still get this. */
 export const MAX_ATTEMPTS = 10;
 export const SUBMIT_DELAY_MS = 850; // mirrors the "dial spin" settle time before a guess resolves
 
-function newCode(len: number): number[] {
-  return Array.from({ length: len }, () => Math.floor(Math.random() * 10));
+function newCode(len: number, allowRepeats: boolean): number[] {
+  return randomCode(len, allowRepeats)
+    .split('')
+    .map(Number);
 }
 
 type Options = {
@@ -19,6 +23,10 @@ type Options = {
    * cracking a human-chosen code instead of a random one.
    */
   presetSecret?: number[];
+  /** Whether the generated secret may repeat digits. Default true. Ignored when `presetSecret` is given. */
+  allowRepeats?: boolean;
+  /** Attempt budget before the round is lost. Default `MAX_ATTEMPTS` (10). */
+  maxAttempts?: number;
 };
 
 /**
@@ -29,19 +37,21 @@ type Options = {
  * `engine/score.test.ts`, so this hook can't drift from those guarantees.
  */
 export function useVaultGame(codeLength: number, options?: Options) {
-  const [code, setCode] = useState(() => options?.presetSecret ?? newCode(codeLength));
+  const allowRepeats = options?.allowRepeats ?? true;
+  const maxAttempts = options?.maxAttempts ?? MAX_ATTEMPTS;
+  const [code, setCode] = useState(() => options?.presetSecret ?? newCode(codeLength, allowRepeats));
   const [entry, setEntry] = useState<number[]>([]);
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [phase, setPhase] = useState<Phase>('play');
   const [spinning, setSpinning] = useState(false);
 
   const reset = useCallback(() => {
-    setCode(newCode(codeLength));
+    setCode(newCode(codeLength, allowRepeats));
     setEntry([]);
     setGuesses([]);
     setPhase('play');
     setSpinning(false);
-  }, [codeLength]);
+  }, [codeLength, allowRepeats]);
 
   const key = useCallback(
     (n: number) => {
@@ -66,13 +76,14 @@ export function useVaultGame(codeLength: number, options?: Options) {
     setTimeout(() => {
       setGuesses((gs) => {
         const next = [...gs, { digits: submittedEntry, exact, mis }];
-        setPhase(exact === codeLength ? 'won' : next.length >= MAX_ATTEMPTS ? 'lost' : 'play');
+        const won = exact === codeLength;
+        setPhase(won ? 'won' : next.length >= maxAttempts ? 'lost' : 'play');
         return next;
       });
       setEntry([]);
       setSpinning(false);
     }, SUBMIT_DELAY_MS);
-  }, [spinning, phase, entry, code, codeLength]);
+  }, [spinning, phase, entry, code, codeLength, maxAttempts]);
 
-  return { code, entry, guesses, phase, spinning, key, del, submit, reset };
+  return { code, entry, guesses, phase, spinning, key, del, submit, reset, maxAttempts };
 }

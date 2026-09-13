@@ -57,10 +57,15 @@ export type DigitFeedback = 'exact' | 'misplaced' | 'dead';
  * instead of just totals — which position was right, which digit was in the
  * secret but in the wrong spot, and which wasn't in the secret at all.
  *
- * Deliberately not used during play: Mastermind's puzzle depends on exact/
- * misplaced counts alone not revealing *which* positions matched. This is
- * for post-game review, once the secret is already revealed and there's
- * nothing left to deduce — so players can see exactly where a guess went wrong.
+ * Deliberately not used during play on Medium/Hard: Mastermind's puzzle
+ * depends on exact/misplaced counts alone not revealing *which* positions
+ * matched. There it's for post-game review, once the secret is already
+ * revealed and there's nothing left to deduce — so players can see exactly
+ * where a guess went wrong.
+ *
+ * Easy is the one exception: `Difficulty.revealPositions` turns this same
+ * per-digit breakdown on *during* play (see `PositionalGuessRow`), which is
+ * precisely what makes Easy easy.
  */
 export function perDigitFeedback(secret: string, guess: string): DigitFeedback[] {
   if (secret.length !== guess.length) {

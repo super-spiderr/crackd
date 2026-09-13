@@ -1,9 +1,9 @@
 import type { DuelPlayer } from '../game/duelConstants';
 import type { Guess } from '../game/useVaultGame';
+import type { Difficulty } from '../engine/types';
 
 export type VaultParams = {
-  codeLength: 3 | 4 | 5 | 6;
-  label: string;
+  difficulty: Difficulty;
 };
 
 export type RootStackParamList = {
